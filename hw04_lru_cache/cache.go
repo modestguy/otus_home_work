@@ -13,6 +13,7 @@ type lruCache struct {
 	queue    List
 	items    map[Key]*ListItem
 }
+
 type cacheItem struct {
 	key   Key
 	value interface{}
