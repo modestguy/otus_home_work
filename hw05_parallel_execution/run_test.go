@@ -38,6 +38,20 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, runTasksCount, int32(workersCount+maxErrorsCount), "extra tasks were started")
 	})
 
+	t.Run("tasks without errors and timers", func(t *testing.T) {
+		tasksCount := 10
+		tasks := make([]Task, 0, tasksCount)
+		for i := 0; i < tasksCount; i++ {
+			tasks = append(tasks, func() error {
+				return nil
+			})
+		}
+
+		require.Eventually(t, func() bool {
+			return Run(tasks, 5, 1) == nil
+		}, time.Second, time.Millisecond)
+	})
+
 	t.Run("tasks without errors", func(t *testing.T) {
 		tasksCount := 50
 		tasks := make([]Task, 0, tasksCount)
