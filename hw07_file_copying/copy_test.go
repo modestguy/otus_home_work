@@ -25,7 +25,7 @@ func TestCopy(t *testing.T) {
 	})
 
 	t.Run("check create file error", func(t *testing.T) {
-		err := Copy("./testdata/input.txt", "/cdrom/test.txt", 0, 0)
+		err := Copy("./testdata/input.txt", "/dev/test.txt", 0, 0)
 		require.Truef(t, errors.Is(err, syscall.EACCES), "actual err - %v", err)
 	})
 
