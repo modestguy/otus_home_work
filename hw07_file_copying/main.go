@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 )
 
 var (
@@ -20,6 +22,7 @@ func main() {
 	flag.Parse()
 	err := Copy(from, to, offset, limit)
 	if err != nil {
-		return
+		fmt.Printf("Ошибка выполнения копирования: %s\n", err.Error())
+		os.Exit(-1)
 	}
 }

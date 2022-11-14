@@ -2,14 +2,41 @@ package main
 
 import (
 	"errors"
+	"github.com/cheggaaa/pb/v3"
 	"io"
 	"os"
+	"time"
 )
 
 var (
 	ErrUnsupportedFile       = errors.New("unsupported file")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
+
+const bufSize = 1
+
+func moveBytes(reader io.Reader, writer io.Writer, limit int) error {
+	bar := pb.StartNew(limit)
+	buf := make([]byte, bufSize)
+	sumRead := 0
+	for sumRead < limit {
+		n, err := reader.Read(buf)
+		if err != nil && err != io.EOF {
+			return err
+		}
+		if n == 0 {
+			break
+		}
+		if _, err := writer.Write(buf[:n]); err != nil {
+			return err
+		}
+		sumRead += n
+		bar.Increment()
+		time.Sleep(1000)
+	}
+	bar.Finish()
+	return nil
+}
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
 	fi, err := os.Stat(fromPath)
@@ -36,7 +63,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		}
 	}(file)
 
-	_, err = file.Seek(offset, 0)
+	_, err = file.Seek(offset, io.SeekStart)
 	if err != nil {
 		return err
 	}
@@ -55,8 +82,12 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		limit = size
 	}
 
-	_, err = io.CopyN(writeFile, file, limit)
-	if err != nil && !errors.Is(err, io.EOF) {
+	portion := limit
+	if offset+limit > size {
+		portion = size - offset
+	}
+	err = moveBytes(file, writeFile, int(portion))
+	if err != nil {
 		return err
 	}
 	return nil
