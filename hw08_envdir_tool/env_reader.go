@@ -46,6 +46,10 @@ func ReadDir(dir string) (Environment, error) {
 
 		fi, err := f.Stat()
 		if err != nil {
+			err := f.Close()
+			if err != nil {
+				return nil, err
+			}
 			return nil, err
 		}
 		if fi.Size() == 0 {
