@@ -14,27 +14,12 @@ const (
 	equalsSymbol = "="
 )
 
-var ErrContainsEquals = errors.New("filename contains equal symbol")
-
 type Environment map[string]EnvValue
 
 // EnvValue helps to distinguish between empty files and files with the first empty line.
 type EnvValue struct {
 	Value      string
 	NeedRemove bool
-}
-
-func checkFileNameIsValid(fileName string) (bool, error) {
-	res := strings.Contains(fileName, equalsSymbol)
-	if res {
-		return false, ErrContainsEquals
-	}
-	return true, nil
-}
-
-func processLine(line string) string {
-	line = strings.TrimRight(line, " \t\n")
-	return strings.ReplaceAll(line, "\x00", "\n")
 }
 
 // ReadDir reads a specified directory and returns map of env variables.
@@ -48,7 +33,7 @@ func ReadDir(dir string) (Environment, error) {
 	resultMap := make(Environment)
 	for _, file := range files {
 		fileName := file.Name()
-		isValid, _ := checkFileNameIsValid(fileName)
+		isValid := checkFileNameIsValid(fileName)
 		if !isValid {
 			continue
 		}
@@ -78,7 +63,7 @@ func ReadDir(dir string) (Environment, error) {
 		}
 
 		emptyLine := false
-		if len(line) == 0 {
+		if line == "" {
 			emptyLine = true
 		}
 
@@ -93,4 +78,13 @@ func ReadDir(dir string) (Environment, error) {
 		}
 	}
 	return resultMap, nil
+}
+
+func checkFileNameIsValid(fileName string) bool {
+	return !strings.Contains(fileName, equalsSymbol)
+}
+
+func processLine(line string) string {
+	line = strings.TrimRight(line, " \t\n")
+	return strings.ReplaceAll(line, "\x00", "\n")
 }

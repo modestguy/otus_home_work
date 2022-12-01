@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -24,29 +23,44 @@ func setEnvironments(env Environment) (bool, error) {
 	return true, nil
 }
 
-var setEnvironmentsFunc = setEnvironments
-
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
 func RunCmd(cmd []string, env Environment) (returnCode int) {
-	_, err := setEnvironmentsFunc(env)
+	_, err := setEnvironments(env)
 	if err != nil {
 		fmt.Println(err.Error())
 		return -1
 	}
 
 	execCommand := exec.Command(cmd[0], cmd[1:]...) //nolint:gosec
-	execCommand.Env = os.Environ()
-	var stdBuffer bytes.Buffer
-	mw := io.MultiWriter(os.Stdout, &stdBuffer)
+	out := io.MultiWriter(os.Stdout)
+	execCommand.Stderr, execCommand.Stdout = out, out
 
-	execCommand.Stdout = mw
-	execCommand.Stderr = mw
-
-	if err := execCommand.Run(); err != nil {
+	procIn, err := execCommand.StdinPipe()
+	if nil != err {
 		fmt.Println(err.Error())
 		return -1
 	}
 
-	print(stdBuffer.String())
+	go func() {
+		_, err := io.Copy(io.MultiWriter(procIn), os.Stdin)
+		if err != nil {
+			return
+		}
+		err = procIn.Close()
+		if err != nil {
+			return
+		}
+	}()
+
+	if err := execCommand.Start(); nil != err {
+		fmt.Println(err.Error())
+		return execCommand.ProcessState.ExitCode()
+	}
+
+	err = execCommand.Wait()
+	if err != nil {
+		fmt.Println(err.Error())
+		return -1
+	}
 	return 0
 }

@@ -14,9 +14,9 @@ func main() {
 		fmt.Println("Необходимо два аргумента: путь и команду для выполнения")
 		os.Exit(-1)
 	}
-	environments, err := ReadDir(args[1])
+	env, err := ReadDir(args[1])
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	RunCmd(args[2:], environments)
+	RunCmd(args[2:], env)
 }
